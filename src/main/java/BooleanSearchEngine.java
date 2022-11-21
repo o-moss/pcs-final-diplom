@@ -2,16 +2,28 @@ import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfReader;
 import com.itextpdf.kernel.pdf.canvas.parser.PdfTextExtractor;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
 import java.util.*;
 
 public class BooleanSearchEngine implements SearchEngine {
-    Map<String, List <PageEntry>> answer = new HashMap<>();
+    Map<String, List<PageEntry>> answer = new HashMap<>();
+    File file = new File("stop-ru.txt");
+    List<String> stopList = new ArrayList<>();
 
     public BooleanSearchEngine(File pdfsDir) throws IOException {
-        // прочтите тут все pdf и сохраните нужные данные,
-        // тк во время поиска сервер не должен уже читать файлы
+        if (file.exists()) {
+            try (BufferedReader br = new BufferedReader(new FileReader(file))) {
+                String s;
+                while ((s = br.readLine()) != null) {
+                    stopList.add(s);
+                }
+            } catch (IOException ex) {
+                System.out.println(ex.getMessage());
+            }
+        }
         for (File pdf : pdfsDir.listFiles()) {
             var doc = new PdfDocument(new PdfReader(pdf));
             for (int i = 1; i < doc.getNumberOfPages(); i++) {
@@ -20,6 +32,9 @@ public class BooleanSearchEngine implements SearchEngine {
                 var words = text.split("\\P{IsAlphabetic}+");
                 Map<String, Integer> freqs = new HashMap<>();
                 for (String word : words) {
+                    if (stopList.contains(word)) {
+                        break;
+                    }
                     if (word.isEmpty()) {
                         continue;
                     }
@@ -29,13 +44,12 @@ public class BooleanSearchEngine implements SearchEngine {
                 for (Map.Entry<String, Integer> entry : freqs.entrySet()) {
                     PageEntry pageEntry = new PageEntry(pdf.getName(), i, entry.getValue());
                     if (answer.get(entry.getKey()) != null) {
-                    List<PageEntry> list = answer.get(entry.getKey());
-                    list.add(pageEntry);
-                    //list = (List<PageEntry>) Arrays.stream(list.toArray()).sorted();
-                    Collections.sort(list);
-                    answer.put(entry.getKey(), list);
+                        List<PageEntry> list = answer.get(entry.getKey());
+                        list.add(pageEntry);
+                        Collections.sort(list);
+                        answer.put(entry.getKey(), list);
                     } else {
-                        List <PageEntry> list = new ArrayList<>();
+                        List<PageEntry> list = new ArrayList<>();
                         list.add(pageEntry);
                         answer.put(entry.getKey(), list);
                     }
@@ -46,7 +60,36 @@ public class BooleanSearchEngine implements SearchEngine {
 
     @Override
     public List<PageEntry> search(String word) {
-        // тут реализуйте поиск по слову
         return answer.get(word);
+    }
+
+    public List<PageEntry> multiSearch(String[] words) {
+        List<PageEntry> list = new ArrayList<>();
+        for (String s : words) {
+            if (list.isEmpty() | list == null) {
+                if (answer.get(s) != null) {
+                    list = answer.get(s);
+                }
+            } else {
+                if (answer.get(s) != null) {
+                    List<PageEntry> list2 = answer.get(s);
+                    List<PageEntry> tempList = new ArrayList<>();
+                    for (PageEntry p2 : list2) {
+                        for (PageEntry p1 : list) {
+                            if (p2.getPdfName().equals(p1.getPdfName())) {
+                                if (p2.getPage() == p1.getPage()) {
+                                    p1.setCount(p1.getCount() + p2.getCount());
+                                    break;
+                                }
+                            }
+                        }
+                        tempList.add(p2);
+                    }
+                    list.addAll(tempList);
+                }
+            }
+        }
+        Collections.sort(list);
+        return list;
     }
 }
