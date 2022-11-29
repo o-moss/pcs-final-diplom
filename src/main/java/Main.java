@@ -12,11 +12,7 @@ public class Main {
 
         try (ServerSocket serverSocket = new ServerSocket(8989);) {
             while (true) {
-                try (
-                        Socket socket = serverSocket.accept();
-                        BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-                        PrintWriter out = new PrintWriter(socket.getOutputStream());
-                ) {
+                try (Socket socket = serverSocket.accept(); BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream())); PrintWriter out = new PrintWriter(socket.getOutputStream());) {
                     final String words = in.readLine();
                     List<PageEntry> answerFromServer = new ArrayList<>();
                     String[] wordsForParsing = words.split("\\P{IsAlphabetic}+");

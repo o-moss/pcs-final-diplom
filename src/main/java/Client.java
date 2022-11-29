@@ -13,10 +13,8 @@ public class Client {
     private static final String HOST = "127.0.0.1";
 
     public static void main(String[] args) {
-        try (Socket clientSocket = new Socket(HOST, PORT);
-             PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
-             BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));) {
-            out.println("оценка, для, в, больше");
+        try (Socket clientSocket = new Socket(HOST, PORT); PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true); BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));) {
+            out.println("Бизнес, Бизнесу");
             Gson gson = new Gson();
             String json = in.readLine();
             List<PageEntry> answerFromServer = gson.fromJson(json, List.class);

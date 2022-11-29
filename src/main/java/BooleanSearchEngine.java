@@ -32,13 +32,15 @@ public class BooleanSearchEngine implements SearchEngine {
                 var words = text.split("\\P{IsAlphabetic}+");
                 Map<String, Integer> freqs = new HashMap<>();
                 for (String word : words) {
-                    if (stopList.contains(word)) {
-                        break;
-                    }
                     if (word.isEmpty()) {
                         continue;
                     }
                     word = word.toLowerCase();
+                    for (String s : stopList) {
+                        if (s.equals(word)) {
+                            break;
+                        }
+                    }
                     freqs.put(word, freqs.getOrDefault(word, 0) + 1);
                 }
                 for (Map.Entry<String, Integer> entry : freqs.entrySet()) {
@@ -60,12 +62,13 @@ public class BooleanSearchEngine implements SearchEngine {
 
     @Override
     public List<PageEntry> search(String word) {
-        return answer.get(word);
+        return answer.get(word.toLowerCase());
     }
 
     public List<PageEntry> multiSearch(String[] words) {
         List<PageEntry> list = new ArrayList<>();
         for (String s : words) {
+            s = s.toLowerCase();
             if (list.isEmpty() | list == null) {
                 if (answer.get(s) != null) {
                     list = answer.get(s);
